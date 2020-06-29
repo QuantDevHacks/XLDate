@@ -11,8 +11,11 @@ void testLeapDates();
 
 int main()
 {
-	quickTestDates();
-	testLeapDates();
+	//quickTestDates();
+	//testLeapDates();
+	XLDate a(1900,1,11);
+	cout << a.serialDate() << endl; 
+	cout << a.dayOfWeek() << endl;
 	return 0;
 }
 
