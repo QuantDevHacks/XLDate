@@ -105,6 +105,12 @@ namespace Dates
 		};
 		return (leapYear() ? monthLeapLength[month() - 1] : monthLength[month() - 1]);
 	}
+
+	unsigned XLDate::dayOfWeek() const
+	{
+		// From Sunday to Saturday (0 to 6)
+		return (serialDate_ - 1) % 7;  // In accordance with Excel. The date before 3/1/1900 is wrong
+	}
 	
 	bool XLDate::leapYear() const
 	{	
@@ -115,6 +121,19 @@ namespace Dates
 		else
 		{
 			return date_.year().is_leap();
+		}
+	}
+
+	bool XLDate::weekday() const
+	{
+		unsigned day = dayOfWeek();
+		if (day == 0 || day == 6)
+		{
+			return false;
+		}
+		else
+		{
+			return true;
 		}
 	}
 
