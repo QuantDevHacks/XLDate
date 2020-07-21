@@ -301,7 +301,7 @@ namespace Dates
 		{
 			serialDate_ = 60;
 		}
-		else if (!date_.ok() || (year() - 1900) > 199)
+		else if (!date_.ok() || (year() - 1900) > 299)
 		{
 			return false;
 		}
