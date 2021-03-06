@@ -105,6 +105,12 @@ namespace Dates
 		};
 		return (leapYear() ? monthLeapLength[month() - 1] : monthLength[month() - 1]);
 	}
+
+	unsigned XLDate::dayOfWeek() const
+	{
+		// From Sunday to Saturday (0 to 6)
+		return (serialDate_ - 1) % 7;  // In accordance with Excel. The date before 3/1/1900 is wrong
+	}
 	
 	bool XLDate::leapYear() const
 	{	
@@ -115,6 +121,19 @@ namespace Dates
 		else
 		{
 			return date_.year().is_leap();
+		}
+	}
+
+	bool XLDate::weekday() const
+	{
+		unsigned day = dayOfWeek();
+		if (day == 0 || day == 6)
+		{
+			return false;
+		}
+		else
+		{
+			return true;
 		}
 	}
 
@@ -161,7 +180,7 @@ namespace Dates
 
 	void XLDate::setDay(unsigned day)
 	{
-		date_ = date_.year() / date_.month() / date_.day();
+		date_ = date_.year() / date_.month() / date::day(day);
 		if (!dateToSerial_())
 		{
 			out_of_range e("Dates::XLDate::setDay(.): resulting date out of range.");
@@ -282,7 +301,7 @@ namespace Dates
 		{
 			serialDate_ = 60;
 		}
-		else if (!date_.ok() || (year() - 1900) > 199)
+		else if (!date_.ok() || (year() - 1900) > 299)
 		{
 			return false;
 		}
@@ -303,3 +322,26 @@ namespace Dates
 		return os;
 	}
 }
+
+/*
+	The MIT License (MIT)
+
+	Copyright (c) 2020 Daniel Hanson
+	Contributors: Reeta Khare, Gregory Brownson, Steven Zhang
+
+	Permission is hereby granted, free of charge, to any person obtaining a copy of this software
+	and associated documentation files (the "Software"), to deal in the Software without restriction,
+	including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense,
+	and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so,
+	subject to the following conditions:
+
+	The above copyright notice and this permission notice shall be included in all copies or substantial
+	portions of the Software.
+
+	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT
+	NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+	IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+	WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+	SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+*/
