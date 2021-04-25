@@ -69,8 +69,7 @@ namespace Dates
 		// This can only be done in the header for integer types (prior to C++11)
 		static const unsigned minSerial_ = 1;		// 1900.01.01: Matches Excel
 		static const unsigned maxSerial_ = 109574;	// 2199.12.31: Matches Excel
-		static constexpr date::sys_days minDate_ = date::sys_days(1900_y / jan / 01);
-		static constexpr date::sys_days maxDate_ = date::sys_days(2199_y / dec / 31);
+
 	};
 };
 

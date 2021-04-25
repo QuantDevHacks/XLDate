@@ -1,10 +1,10 @@
 #include "XLDate.h"
 #include "date.h"
-#include <stdexcept>	// For out_of_range and invalid argument exceptions
+#include <stdexcept>    // For out_of_range and invalid argument exceptions
 // See http://www.cplusplus.com/reference/stdexcept/out_of_range/
 
 using Dates::XLDate;
-using namespace date;		// C++20 date namespace
+using namespace date;        // C++20 date namespace
 using std::out_of_range;
 using std::invalid_argument;
 
@@ -15,310 +15,251 @@ using std::invalid_argument;
 
 // Note:  _MSC_VER >= 1900 in date.h means Visual Studio 2015 or higher
 
-namespace Dates
-{
-	// Default:  Earliest UNIX date
-	XLDate::XLDate():date_(date::year(1970) / date::month(1) / date::day(1))
-	{
-		if (!dateToSerial_())
-		{
-			// This should never happen:
-			out_of_range e("XLDate::XLDate: Calendar XLDate is out of range in default constructor.");
-			throw e;
-		}
-	}
+namespace Dates {
+    static constexpr date::sys_days minDate_ = date::sys_days(1900_y / jan / 01);
+    static constexpr date::sys_days maxDate_ = date::sys_days(2199_y / dec / 31);
 
-	XLDate::XLDate(unsigned serialDate) : serialDate_(serialDate)
-	{
-		if (!serialToDate_())
-		{
-			out_of_range e("XLDate::XLDate: Serial XLDate is out of range in serialDate constructor.");
-			throw e;
-		}
-	}
+    // Default:  Earliest UNIX date
+    XLDate::XLDate() : date_(date::year(1970) / date::month(1) / date::day(1)) {
+        if (!dateToSerial_()) {
+            // This should never happen:
+            out_of_range e("XLDate::XLDate: Calendar XLDate is out of range in default constructor.");
+            throw e;
+        }
+    }
 
-	XLDate::XLDate(unsigned year, unsigned month, unsigned day) : date_(date::year(year) / date::month(month) / date::day(day))
-	{		
-		if (!dateToSerial_())
-		{
-			out_of_range e("XLDate::XLDate: Calendar XLDate is out of range in YMD constructor.");
-			throw e;
-		}
-	}
+    XLDate::XLDate(unsigned serialDate) : serialDate_(serialDate) {
+        if (!serialToDate_()) {
+            out_of_range e("XLDate::XLDate: Serial XLDate is out of range in serialDate constructor.");
+            throw e;
+        }
+    }
 
-	XLDate& XLDate::addYears(int years)
-	{
-		date_ += date::years(years);
+    XLDate::XLDate(unsigned year, unsigned month, unsigned day) : date_(
+            date::year(year) / date::month(month) / date::day(day)) {
+        if (!dateToSerial_()) {
+            out_of_range e("XLDate::XLDate: Calendar XLDate is out of range in YMD constructor.");
+            throw e;
+        }
+    }
 
-		if (!dateToSerial_())
-		{
-			out_of_range e("XLDate::XLDate::addYears(.): resulting date out of range.");
-			throw e;
-		}
+    XLDate &XLDate::addYears(int years) {
+        date_ += date::years(years);
 
-		return *this;
-	}
+        if (!dateToSerial_()) {
+            out_of_range e("XLDate::XLDate::addYears(.): resulting date out of range.");
+            throw e;
+        }
 
-	XLDate& XLDate::addMonths(int months)
-	{
-		date_ += date::months(months);
+        return *this;
+    }
 
-		if (!dateToSerial_())
-		{
-			out_of_range e("XLDate::XLDate::addMonths(.): resulting date out of range.");
-			throw e;
-		}
+    XLDate &XLDate::addMonths(int months) {
+        date_ += date::months(months);
 
-		return *this;
-	}
+        if (!dateToSerial_()) {
+            out_of_range e("XLDate::XLDate::addMonths(.): resulting date out of range.");
+            throw e;
+        }
 
-	XLDate& XLDate::addDays(int days)
-	{
-		serialDate_ += days;
+        return *this;
+    }
 
-		if (!serialToDate_())
-		{
-			out_of_range e("XLDate::XLDate::addDays(.): resulting date out of range.");
-			throw e;
-		}
+    XLDate &XLDate::addDays(int days) {
+        serialDate_ += days;
 
-		return *this;
-	}
+        if (!serialToDate_()) {
+            out_of_range e("XLDate::XLDate::addDays(.): resulting date out of range.");
+            throw e;
+        }
 
-	bool XLDate::endOfMonth() const
-	{
-		if (serialDate_ == 60)
-		{
-			return true;
-		}
+        return *this;
+    }
 
-		return date_ == date_.year() / date_.month() / date::last;
-	}
+    bool XLDate::endOfMonth() const {
+        if (serialDate_ == 60) {
+            return true;
+        }
 
-	unsigned XLDate::daysInMonth() const
-	{
-		static const unsigned monthLength[] = {
-			31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31
-		};
-		static const unsigned monthLeapLength[] = {
-			31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31
-		};
-		return (leapYear() ? monthLeapLength[month() - 1] : monthLength[month() - 1]);
-	}
+        return date_ == date_.year() / date_.month() / date::last;
+    }
 
-	unsigned XLDate::dayOfWeek() const
-	{
-		// From Sunday to Saturday (0 to 6)
-		return (serialDate_ - 1) % 7;  // In accordance with Excel. The date before 3/1/1900 is wrong
-	}
-	
-	bool XLDate::leapYear() const
-	{	
-		if(year() == 1900)
-		{
-			return true;
-		}
-		else
-		{
-			return date_.year().is_leap();
-		}
-	}
+    unsigned XLDate::daysInMonth() const {
+        static const unsigned monthLength[] = {
+                31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31
+        };
+        static const unsigned monthLeapLength[] = {
+                31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31
+        };
+        return (leapYear() ? monthLeapLength[month() - 1] : monthLength[month() - 1]);
+    }
 
-	bool XLDate::weekday() const
-	{
-		unsigned day = dayOfWeek();
-		if (day == 0 || day == 6)
-		{
-			return false;
-		}
-		else
-		{
-			return true;
-		}
-	}
+    unsigned XLDate::dayOfWeek() const {
+        // From Sunday to Saturday (0 to 6)
+        return (serialDate_ - 1) % 7;  // In accordance with Excel. The date before 3/1/1900 is wrong
+    }
 
-	unsigned XLDate::year() const
-	{
-		return static_cast<unsigned>(static_cast<int>(date_.year()));
-	}
+    bool XLDate::leapYear() const {
+        if (year() == 1900) {
+            return true;
+        } else {
+            return date_.year().is_leap();
+        }
+    }
 
-	unsigned XLDate::month() const
-	{
-		return static_cast<unsigned>(date_.month());
-	}
+    bool XLDate::weekday() const {
+        unsigned day = dayOfWeek();
+        if (day == 0 || day == 6) {
+            return false;
+        } else {
+            return true;
+        }
+    }
 
-	unsigned XLDate::day() const
-	{
-		return static_cast<unsigned>(date_.day());
-	}
+    unsigned XLDate::year() const {
+        return static_cast<unsigned>(static_cast<int>(date_.year()));
+    }
 
-	unsigned XLDate::serialDate() const
-	{
-		return serialDate_;
-	}
+    unsigned XLDate::month() const {
+        return static_cast<unsigned>(date_.month());
+    }
 
-	void XLDate::setYear(unsigned year)
-	{
-		date_ = date::year(year) / date_.month() / date_.day();
-		if (!dateToSerial_())
-		{
-			out_of_range e("Dates::XLDate::setYear(.): resulting date out of range.");
-			throw e;
-		}
+    unsigned XLDate::day() const {
+        return static_cast<unsigned>(date_.day());
+    }
 
-	}
+    unsigned XLDate::serialDate() const {
+        return serialDate_;
+    }
 
-	void XLDate::setMonth(unsigned month)
-	{
-		date_ = date_.year() / date::month(month) / date_.day();
-		if (!dateToSerial_())
-		{
-			out_of_range e("Dates::XLDate::setMonth(.): resulting date out of range.");
-			throw e;
-		}
-	}
+    void XLDate::setYear(unsigned year) {
+        date_ = date::year(year) / date_.month() / date_.day();
+        if (!dateToSerial_()) {
+            out_of_range e("Dates::XLDate::setYear(.): resulting date out of range.");
+            throw e;
+        }
 
-	void XLDate::setDay(unsigned day)
-	{
-		date_ = date_.year() / date_.month() / date_.day();
-		if (!dateToSerial_())
-		{
-			out_of_range e("Dates::XLDate::setDay(.): resulting date out of range.");
-			throw e;
-		}
-	}
+    }
 
-	void XLDate::setSerialDate(unsigned serialXLDate)
-	{
-		serialDate_ = serialXLDate;
-		if (!serialToDate_())
-		{
-			out_of_range e("Dates::XLDate::setSerialXLDate(.): resulting date out of range.");
-			throw e;
-		}
-	}
+    void XLDate::setMonth(unsigned month) {
+        date_ = date_.year() / date::month(month) / date_.day();
+        if (!dateToSerial_()) {
+            out_of_range e("Dates::XLDate::setMonth(.): resulting date out of range.");
+            throw e;
+        }
+    }
 
-	unsigned XLDate::operator()() const
-	{
-		return serialDate();
-	}
+    void XLDate::setDay(unsigned day) {
+        date_ = date_.year() / date_.month() / date_.day();
+        if (!dateToSerial_()) {
+            out_of_range e("Dates::XLDate::setDay(.): resulting date out of range.");
+            throw e;
+        }
+    }
 
-	unsigned XLDate::operator - (const XLDate& rhs) const
-	{
-		return serialDate_ - rhs.serialDate_;
-	}
+    void XLDate::setSerialDate(unsigned serialXLDate) {
+        serialDate_ = serialXLDate;
+        if (!serialToDate_()) {
+            out_of_range e("Dates::XLDate::setSerialXLDate(.): resulting date out of range.");
+            throw e;
+        }
+    }
 
-	XLDate& XLDate::operator += (int days)
-	{
-		return addDays(days);
-	}
+    unsigned XLDate::operator()() const {
+        return serialDate();
+    }
 
-	XLDate& XLDate::operator -= (int days)
-	{
-		return addDays(-days);
-	}
+    unsigned XLDate::operator-(const XLDate &rhs) const {
+        return serialDate_ - rhs.serialDate_;
+    }
 
-	XLDate& XLDate::operator ++ ()
-	{
-		return addDays(1);
-	}
+    XLDate &XLDate::operator+=(int days) {
+        return addDays(days);
+    }
 
-	XLDate& XLDate::operator -- ()
-	{
-		return addDays(-1);
-	}
+    XLDate &XLDate::operator-=(int days) {
+        return addDays(-days);
+    }
 
-	XLDate XLDate::operator ++ (int notused)
-	{
-		XLDate d(*this);
+    XLDate &XLDate::operator++() {
+        return addDays(1);
+    }
 
-		return ++d;
-	}
+    XLDate &XLDate::operator--() {
+        return addDays(-1);
+    }
 
-	XLDate XLDate::operator -- (int notused)
-	{
-		XLDate d(*this);
+    XLDate XLDate::operator++(int notused) {
+        XLDate d(*this);
 
-		return --d;
-	}
+        return ++d;
+    }
 
-	bool XLDate::operator == (const XLDate& rhs) const
-	{
-		return serialDate_ == rhs.serialDate_;
-	}
+    XLDate XLDate::operator--(int notused) {
+        XLDate d(*this);
 
-	bool XLDate::operator!=(const XLDate & rhs) const
-	{
-		return serialDate_ != rhs.serialDate_;
-	}
+        return --d;
+    }
 
-	bool XLDate::operator < (const XLDate& rhs) const
-	{
-		return serialDate_ < rhs.serialDate_;
-	}
+    bool XLDate::operator==(const XLDate &rhs) const {
+        return serialDate_ == rhs.serialDate_;
+    }
 
-	bool XLDate::operator > (const XLDate& rhs) const
-	{
-		return serialDate_ > rhs.serialDate_;
-	}
+    bool XLDate::operator!=(const XLDate &rhs) const {
+        return serialDate_ != rhs.serialDate_;
+    }
 
-	bool XLDate::operator <= (const XLDate& rhs) const
-	{
-		return serialDate_ <= rhs.serialDate_;
-	}
+    bool XLDate::operator<(const XLDate &rhs) const {
+        return serialDate_ < rhs.serialDate_;
+    }
 
-	bool XLDate::operator >= (const XLDate& rhs) const
-	{
-		return serialDate_ >= rhs.serialDate_;
-	}
+    bool XLDate::operator>(const XLDate &rhs) const {
+        return serialDate_ > rhs.serialDate_;
+    }
 
-	bool XLDate::serialToDate_()
-	{
-		// Check if serial date is in range
-		if ((serialDate_ - minSerial_) >= maxSerial_)
-		{
-			return false;
-		}
-		else if (serialDate_ == 60)
-		{
-			date_ = 1900_y / feb / 29;
-		}
-		else
-		{
-			// If serialXLDate is greater than 60, then adjust serial date accordingly
-			date_ = (serialDate_ > 60) ? date::year_month_day(minDate_ + date::days(serialDate_ - 2))
-									   : date::year_month_day(minDate_ + date::days(serialDate_ - 1));
-		}
+    bool XLDate::operator<=(const XLDate &rhs) const {
+        return serialDate_ <= rhs.serialDate_;
+    }
 
-		return true;
-	}
+    bool XLDate::operator>=(const XLDate &rhs) const {
+        return serialDate_ >= rhs.serialDate_;
+    }
 
-	bool XLDate::dateToSerial_()
-	{
-		// Check if date is valid
-		
-		if (date_ == 1900_y / feb / 29)
-		{
-			serialDate_ = 60;
-		}
-		else if (!date_.ok() || (year() - 1900) > 299)
-		{
-			return false;
-		}
-		else
-		{
-			// If date is past Feb 29, 1900, add one to serial date value
-			serialDate_ = (date_ >= 1900_y / mar / 1) ? date::days(date::sys_days(date_) - minDate_).count() + 2
-													  : date::days(date::sys_days(date_) - minDate_).count() + 1;
-		}
+    bool XLDate::serialToDate_() {
+        // Check if serial date is in range
+        if ((serialDate_ - minSerial_) >= maxSerial_) {
+            return false;
+        } else if (serialDate_ == 60) {
+            date_ = 1900_y / feb / 29;
+        } else {
+            // If serialXLDate is greater than 60, then adjust serial date accordingly
+            date_ = (serialDate_ > 60) ? date::year_month_day(minDate_ + date::days(serialDate_ - 2))
+                                       : date::year_month_day(minDate_ + date::days(serialDate_ - 1));
+        }
 
-		return true;
-	}
+        return true;
+    }
 
-	// This is a 'friend' of the XLDate class
-	std::ostream& operator << (std::ostream& os, const XLDate& rhs)
-	{
-		os /* << "yyyy.mm.dd = " */ << rhs.year() << "." << rhs.month() << "." << rhs.day() << "; Excel serial format = " << rhs.serialDate_;
-		return os;
-	}
+    bool XLDate::dateToSerial_() {
+        // Check if date is valid
+
+        if (date_ == 1900_y / feb / 29) {
+            serialDate_ = 60;
+        } else if (!date_.ok() || (year() - 1900) > 299) {
+            return false;
+        } else {
+            // If date is past Feb 29, 1900, add one to serial date value
+            serialDate_ = (date_ >= 1900_y / mar / 1) ? date::days(date::sys_days(date_) - minDate_).count() + 2
+                                                      : date::days(date::sys_days(date_) - minDate_).count() + 1;
+        }
+
+        return true;
+    }
+
+    // This is a 'friend' of the XLDate class
+    std::ostream &operator<<(std::ostream &os, const XLDate &rhs) {
+        os /* << "yyyy.mm.dd = " */ << rhs.year() << "." << rhs.month() << "." << rhs.day()
+                                    << "; Excel serial format = " << rhs.serialDate_;
+        return os;
+    }
 }
