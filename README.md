@@ -2,6 +2,17 @@
 A C++ Date class based on the new C++20 date namespace and compatible with Excel's date indexing
 
 # Quickstart
+To run `main()` with docker
+````
+src> docker build -t XLDate:latest .
+src> docker run XLDate:latest
+````
+Catch2 tests can be executed in Docker as well
+````
+src> docker run XLDate:latest /build/XLDateTests -s
+````
+![Docker running XLDateMain abd XLDateTests](docs/docker-build-run.gif)
+# Contributing
 ## Building
 [CMake](https://cmake.org) is used to generate platform specific build sources.
 ````
