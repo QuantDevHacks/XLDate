@@ -1,6 +1,5 @@
-#include "catch.hpp"
-#include "../Dates/XLDate.h"
-#include "../Dates/date.h"
+#include "catch2/catch.hpp"
+#include "XLDate.h"
 #include <stdexcept>
 
 using Dates::XLDate;
